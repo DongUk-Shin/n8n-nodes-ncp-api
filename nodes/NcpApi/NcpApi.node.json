@@ -1,0 +1,16 @@
+{
+	"node": "n8n-nodes-ncp-api",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"categories": [
+		"Development",
+		"Developer Tools"
+	],
+	"resources": {
+		"primaryDocumentation": [
+			{
+				"url": "https://github.com/DongUk-Shin/n8n-nodes-ncp-api"
+			}
+		]
+	}
+}
