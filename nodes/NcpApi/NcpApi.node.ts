@@ -42,29 +42,16 @@ export class NcpApi implements INodeType {
 		credentials: [
 			{
 				name: 'ncpApi',
-				displayName: 'NCP API',
+				displayName: 'Credential',
 			},
 		],
 		properties: [
 			{
-				displayName: 'Zone',
-				name: 'zone',
-				type: 'options',
-				options: [
-					{
-						name: '민간존',
-						value: 'ncp',
-					},
-					{
-						name: '금융존',
-						value: 'fin',
-					},
-					{
-						name: '공공존',
-						value: 'gov',
-					},
-				],
-				default: 'ncp',
+				displayName: 'API URL',
+				name: 'apiUrl',
+				type: 'string',
+				default: '',
+				placeholder: 'https://ncloud.apigw.ntruss.com',
 			},
 			{
 				displayName: 'URI',
@@ -104,15 +91,9 @@ export class NcpApi implements INodeType {
 		const items = this.getInputData();
 		const returnData: INodeExecutionData[] = [];
 
-		const baseUrls: { [key: string]: string } = {
-			ncp: 'https://ncloud.apigw.ntruss.com',
-			fin: 'https://ncloud.apigw.fin-ntruss.com',
-			gov: 'https://ncloud.apigw.gov-ntruss.com',
-		};
-
 		for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
 			try {
-				const zone = this.getNodeParameter('zone', itemIndex, 'ncp') as string;
+				const baseUrl = this.getNodeParameter('baseUrl', itemIndex, 'https://ncloud.apigw.ntruss.com') as string;
 				const uri = this.getNodeParameter('uri', itemIndex, '') as string;
 				const method = this.getNodeParameter('method', itemIndex, 'GET') as string;
 				const credentials = await this.getCredentials('ncpApi');
@@ -130,8 +111,6 @@ export class NcpApi implements INodeType {
 						});
 					}
 				}
-
-				const baseUrl = baseUrls[zone] || baseUrls['ncp'];
 				const fullUrl = `${baseUrl}${uri}`;
 
 				// -----------------------------------------
@@ -165,8 +144,6 @@ export class NcpApi implements INodeType {
 
 				if (method === 'GET') {
 					options.qs = params as Record<string, string>;
-				} else {
-					options.body = params as Record<string, unknown>;
 				}
 
 				const response = await this.helpers.httpRequest(options);
