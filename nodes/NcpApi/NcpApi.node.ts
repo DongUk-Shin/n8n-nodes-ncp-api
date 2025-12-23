@@ -69,18 +69,55 @@ export class NcpApi implements INodeType {
 						name: 'GET',
 						value: 'GET',
 					},
+					{
+						name: 'POST',
+						value: 'POST',
+					},
 				],
 				default: 'GET',
 			},
 			{
-				displayName: '쿼리 파라미터',
+				displayName: '요청 쿼리 파라미터',
 				name: 'queryParameters',
 				type: 'json',
 				typeOptions: {
 					rows: 10,
 				},
+				displayOptions: {
+					show: {
+						method: ['GET'],
+					},
+				},
 				default: '{\n  "responseFormatType": "json"\n}',
-				description: '요청 쿼리 파라미터',
+			},
+			{
+				displayName: '요청 헤더',
+				name: 'headerParameters',
+				type: 'json',
+				displayOptions: {
+					show: {
+						method: ['POST'],
+					},
+				},
+				typeOptions: {
+					rows: 10,
+				},
+				default: '{\n  "Content-type": "application/json"\n}',
+				description: 'timestamp, access-key, signature 를 제외한 헤더를 입력해주세요',
+			},
+			{
+				displayName: '요청 바디',
+				name: 'bodyParameters',
+				type: 'json',
+				displayOptions: {
+					show: {
+						method: ['POST'],
+					},
+				},
+				typeOptions: {
+					rows: 10,
+				},
+				default: '{\n  \n}',
 			},
 		],
 	};
@@ -93,7 +130,7 @@ export class NcpApi implements INodeType {
 
 		for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
 			try {
-				const baseUrl = this.getNodeParameter('baseUrl', itemIndex, 'https://ncloud.apigw.ntruss.com') as string;
+				const apiUrl = this.getNodeParameter('apiUrl', itemIndex, 'https://ncloud.apigw.ntruss.com') as string;
 				const uri = this.getNodeParameter('uri', itemIndex, '') as string;
 				const method = this.getNodeParameter('method', itemIndex, 'GET') as string;
 				const credentials = await this.getCredentials('ncpApi');
@@ -106,20 +143,50 @@ export class NcpApi implements INodeType {
 					try {
 						params = JSON.parse(queryParameters);
 					} catch {
-						throw new NodeOperationError(this.getNode(), 'Parameters must be a valid JSON string', {
+						throw new NodeOperationError(this.getNode(), 'Query Parameters must be a valid JSON string', {
 							itemIndex,
 						});
 					}
 				}
-				const fullUrl = `${baseUrl}${uri}`;
+
+				let body = {};
+				let customHeaders = {};
+
+				if (method === 'POST') {
+					const bodyParameters = this.getNodeParameter('bodyParameters', itemIndex, {}) as string | object;
+					body = bodyParameters;
+					if (typeof bodyParameters === 'string') {
+						try {
+							body = JSON.parse(bodyParameters);
+						} catch {
+							throw new NodeOperationError(this.getNode(), 'Body Parameters must be a valid JSON string', {
+								itemIndex,
+							});
+						}
+					}
+
+					const headerParameters = this.getNodeParameter('headerParameters', itemIndex, {}) as string | object;
+					customHeaders = headerParameters;
+					if (typeof headerParameters === 'string') {
+						try {
+							customHeaders = JSON.parse(headerParameters);
+						} catch {
+							throw new NodeOperationError(this.getNode(), 'Header Parameters must be a valid JSON string', {
+								itemIndex,
+							});
+						}
+					}
+				}
+
+				const fullUrl = `${apiUrl}${uri}`;
 
 				// -----------------------------------------
 				// ⭐ 핵심: signature에 들어갈 URI 구성
 				// -----------------------------------------
 				let signatureUri = uri;
 
-				if (method === 'GET' && params && Object.keys(params).length > 0) {
-					// GET은 query string을 signature에 포함해야 함
+				if (params && Object.keys(params).length > 0) {
+					// GET/POST 공통: query string이 있으면 signature에 포함해야 함
 					const queryString = new URLSearchParams(params as Record<string, string>).toString();
 					signatureUri = `${uri}?${queryString}`;
 				}
@@ -139,11 +206,13 @@ export class NcpApi implements INodeType {
 						'x-ncp-apigw-timestamp': timestamp,
 						'x-ncp-iam-access-key': accessKey,
 						'x-ncp-apigw-signature-v2': signature,
+						...(customHeaders as object),
 					},
+					qs: params as Record<string, string>,
 				};
 
-				if (method === 'GET') {
-					options.qs = params as Record<string, string>;
+				if (method === 'POST') {
+					options.body = body;
 				}
 
 				const response = await this.helpers.httpRequest(options);
