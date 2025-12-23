@@ -103,7 +103,7 @@ export class NcpApi implements INodeType {
 					rows: 10,
 				},
 				default: '{\n  "Content-type": "application/json"\n}',
-				description: 'timestamp, access-key, signature 를 제외한 헤더를 입력해주세요',
+				description: 'Timestamp, access-key, signature 를 제외한 헤더를 입력해주세요',
 			},
 			{
 				displayName: '요청 바디',
