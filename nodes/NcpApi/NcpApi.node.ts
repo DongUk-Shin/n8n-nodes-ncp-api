@@ -43,9 +43,64 @@ export class NcpApi implements INodeType {
 			{
 				name: 'ncpApi',
 				displayName: 'Credential',
+				displayOptions: {
+					show: {
+						operation: [
+							'credentials',
+						],
+					},
+				},
 			},
 		],
 		properties: [
+			{
+				displayName: 'Operation',
+				name: 'operation',
+				type: 'options',
+				noDataExpression: true,
+				options: [
+					{
+						name: 'Credentials 사용',
+						value: 'credentials',
+						action: 'credentials 사용',
+					},
+					{
+						name: '직접 입력',
+						value: 'manual',
+						action: '직접 입력',
+					},
+				],
+				default: 'credentials',
+			},
+			{
+				displayName: 'Access Key',
+				name: 'accessKey',
+				type: 'string',
+				displayOptions: {
+					show: {
+						operation: [
+							'manual',
+						],
+					},
+				},
+				default: '',
+			},
+			{
+				displayName: 'Secret Key',
+				name: 'secretKey',
+				type: 'string',
+				typeOptions: {
+					password: true,
+				},
+				displayOptions: {
+					show: {
+						operation: [
+							'manual',
+						],
+					},
+				},
+				default: '',
+			},
 			{
 				displayName: 'API URL',
 				name: 'apiUrl',
@@ -60,6 +115,7 @@ export class NcpApi implements INodeType {
 				default: '',
 				placeholder: '/vserver/v2/getAccessControlGroupList',
 			},
+
 			{
 				displayName: '메서드',
 				name: 'method',
@@ -77,7 +133,7 @@ export class NcpApi implements INodeType {
 				default: 'GET',
 			},
 			{
-				displayName: '요청 쿼리 파라미터',
+				displayName: '쿼리 파라미터',
 				name: 'queryParameters',
 				type: 'json',
 				typeOptions: {
@@ -91,7 +147,7 @@ export class NcpApi implements INodeType {
 				default: '{\n  "responseFormatType": "json"\n}',
 			},
 			{
-				displayName: '요청 헤더',
+				displayName: '헤더',
 				name: 'headerParameters',
 				type: 'json',
 				displayOptions: {
@@ -103,10 +159,10 @@ export class NcpApi implements INodeType {
 					rows: 10,
 				},
 				default: '{\n  "Content-type": "application/json"\n}',
-				description: 'Timestamp, access-key, signature 를 제외한 헤더를 입력해주세요',
+				description: 'timestamp, access-key, signature 를 제외한 헤더를 입력해주세요',
 			},
 			{
-				displayName: '요청 바디',
+				displayName: '바디',
 				name: 'bodyParameters',
 				type: 'json',
 				displayOptions: {
@@ -117,7 +173,8 @@ export class NcpApi implements INodeType {
 				typeOptions: {
 					rows: 10,
 				},
-				default: '{\n  \n}',
+				default: '{\n  "test": "1234"\n}',
+				required: false,
 			},
 		],
 	};
@@ -133,9 +190,18 @@ export class NcpApi implements INodeType {
 				const apiUrl = this.getNodeParameter('apiUrl', itemIndex, 'https://ncloud.apigw.ntruss.com') as string;
 				const uri = this.getNodeParameter('uri', itemIndex, '') as string;
 				const method = this.getNodeParameter('method', itemIndex, 'GET') as string;
-				const credentials = await this.getCredentials('ncpApi');
-				const accessKey = credentials.accessKey as string;
-				const secretKey = credentials.secretKey as string;
+				const operation = this.getNodeParameter('operation', itemIndex, 'credentials') as string;
+				let accessKey = '';
+				let secretKey = '';
+
+				if (operation === 'credentials') {
+					const credentials = await this.getCredentials('ncpApi');
+					accessKey = credentials.accessKey as string;
+					secretKey = credentials.secretKey as string;
+				} else {
+					accessKey = this.getNodeParameter('accessKey', itemIndex, '') as string;
+					secretKey = this.getNodeParameter('secretKey', itemIndex, '') as string;
+				}
 				const queryParameters = this.getNodeParameter('queryParameters', itemIndex, {}) as string | object;
 
 				let params = queryParameters;
@@ -156,12 +222,16 @@ export class NcpApi implements INodeType {
 					const bodyParameters = this.getNodeParameter('bodyParameters', itemIndex, {}) as string | object;
 					body = bodyParameters;
 					if (typeof bodyParameters === 'string') {
-						try {
-							body = JSON.parse(bodyParameters);
-						} catch {
-							throw new NodeOperationError(this.getNode(), 'Body Parameters must be a valid JSON string', {
-								itemIndex,
-							});
+						if (bodyParameters === '') {
+							body = {};
+						} else {
+							try {
+								body = JSON.parse(bodyParameters);
+							} catch {
+								throw new NodeOperationError(this.getNode(), 'Body Parameters must be a valid JSON string', {
+									itemIndex,
+								});
+							}
 						}
 					}
 
