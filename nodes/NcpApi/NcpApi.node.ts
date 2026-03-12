@@ -175,7 +175,7 @@ export class NcpApi implements INodeType {
 				type: 'json',
 				displayOptions: {
 					show: {
-						method: ['POST', 'PATCH'],
+						method: ['POST', 'PATCH', 'DELETE'],
 					},
 				},
 				typeOptions: {
@@ -225,7 +225,7 @@ export class NcpApi implements INodeType {
 				let body = {};
 				let customHeaders = {};
 
-				if (method === 'POST' || method === 'PATCH') {
+				if (method === 'POST' || method === 'PATCH' || method === 'DELETE') {
 					const bodyParameters = this.getNodeParameter('bodyParameters', itemIndex, {}) as string | object;
 					body = bodyParameters;
 					if (typeof bodyParameters === 'string') {
@@ -288,7 +288,7 @@ export class NcpApi implements INodeType {
 					qs: params as Record<string, string>,
 				};
 
-				if (method === 'POST' || method === 'PATCH') {
+				if (method === 'POST' || method === 'PATCH' || method === 'DELETE') {
 					options.body = body;
 				}
 
