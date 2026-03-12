@@ -129,6 +129,14 @@ export class NcpApi implements INodeType {
 						name: 'POST',
 						value: 'POST',
 					},
+					{
+						name: 'PATCH',
+						value: 'PATCH',
+					},
+					{
+						name: 'DELETE',
+						value: 'DELETE',
+					},
 				],
 				default: 'GET',
 			},
@@ -141,7 +149,7 @@ export class NcpApi implements INodeType {
 				},
 				displayOptions: {
 					show: {
-						method: ['GET'],
+						method: ['GET', 'DELETE'],
 					},
 				},
 				default: '{\n  "responseFormatType": "json"\n}',
@@ -152,7 +160,7 @@ export class NcpApi implements INodeType {
 				type: 'json',
 				displayOptions: {
 					show: {
-						method: ['POST'],
+						method: ['POST', 'PATCH'],
 					},
 				},
 				typeOptions: {
@@ -167,7 +175,7 @@ export class NcpApi implements INodeType {
 				type: 'json',
 				displayOptions: {
 					show: {
-						method: ['POST'],
+						method: ['POST', 'PATCH'],
 					},
 				},
 				typeOptions: {
@@ -217,7 +225,7 @@ export class NcpApi implements INodeType {
 				let body = {};
 				let customHeaders = {};
 
-				if (method === 'POST') {
+				if (method === 'POST' || method === 'PATCH') {
 					const bodyParameters = this.getNodeParameter('bodyParameters', itemIndex, {}) as string | object;
 					body = bodyParameters;
 					if (typeof bodyParameters === 'string') {
@@ -280,7 +288,7 @@ export class NcpApi implements INodeType {
 					qs: params as Record<string, string>,
 				};
 
-				if (method === 'POST') {
+				if (method === 'POST' || method === 'PATCH') {
 					options.body = body;
 				}
 
