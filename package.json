@@ -1,6 +1,6 @@
 {
 	"name": "n8n-nodes-ncp-api",
-	"version": "1.2.0",
+	"version": "2.0.0",
 	"description": "n8n 커뮤니티 노드로, 네이버 클라우드 플랫폼(NCP) API를 호출할 수 있습니다.",
 	"license": "MIT",
 	"homepage": "https://github.com/DongUk-Shin/n8n-nodes-ncp-api",
